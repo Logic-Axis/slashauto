@@ -1,0 +1,293 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slash Command Automator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        input, textarea, select, button {
+            user-select: auto;
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1e1f22;
+        }
+        .card {
+            background-color: #36393f;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #b9bbbe;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background-color: #202225;
+            color: #dcddde;
+            border: 1px solid #2c2f33;
+            border-radius: 8px;
+            padding: 10px;
+            transition: border-color 0.2s, transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #7289da;
+            transform: scale(1.015); 
+            box-shadow: 0 0 10px rgba(114, 137, 218, 0.4); 
+        }
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn-primary {
+            background-color: #5865f2;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4e57e0;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .btn-primary:disabled {
+            background-color: #4f545c;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .log-box {
+            background-color: #202225;
+            border-radius: 8px;
+            padding: 12px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #dcddde;
+            scroll-behavior: smooth;
+            border: 1px solid #2c2f33;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #202225; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #5865f2; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #7289da; }
+
+        .card-transition {
+            transition: opacity 300ms ease-out, max-height 400ms ease-out, padding 300ms ease-out, margin 300ms ease-out;
+            overflow: hidden;
+            opacity: 1;
+            max-height: 1000px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card-hidden {
+            opacity: 0;
+            max-height: 0;
+            padding: 0 24px;
+            margin-bottom: 0;
+            pointer-events: none;
+        }
+        
+        .card-load-animate {
+            animation: slideInUp 0.5s ease-out 0.1s forwards;
+            opacity: 0;
+        }
+
+        #log-card {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: -4px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .log-entry {
+            display: block;
+            padding-bottom: 2px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+
+        /* トグルスイッチのデザイン (Message Raiderから移植) */
+        .checkbox-container {
+        display:flex; align-items:center; gap:8px;
+        cursor:pointer; font-size:14px; user-select:none;
+        margin-top:6px;
+        }
+        .checkbox-container input {
+        appearance:none; width:36px; height:18px;
+        background:#4f545c; border-radius:18px;
+        position:relative; transition:background .3s ease;
+        }
+        .checkbox-container:hover input { background:#5a5f68; }
+        .checkbox-container input:focus {
+        outline:none; box-shadow:0 0 0 3px rgba(114,137,218,0.5);
+        }
+        .checkbox-container input::before {
+        content:''; position:absolute;
+        width:14px; height:14px; border-radius:50%;
+        background:#fff; top:2px; left:2px;
+        transition:transform .3s cubic-bezier(.68,-.55,.27,1.55);
+        }
+        .checkbox-container input:checked { background:#7289da; }
+        .checkbox-container input:checked::before {
+        transform:translateX(18px);
+        }
+        .checkbox-container span { transition:color .3s; }
+        .checkbox-container input:checked + span {
+        color:#adb8ff;
+        }
+
+    </style>
+</head>
+<body class="text-gray-200 p-4 md:p-8">
+
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold text-center mb-6 text-white card-load-animate" style="animation-delay: 0s;">Slash Command Automator</h1>
+
+        <div class="card card-transition" id="settings-card">
+            <h2 class="text-xl font-semibold mb-4 text-white">1. 設定</h2>
+            
+            <div>
+                <label for="token" class="form-label">トークン</label>
+                <div style="position:relative;">
+                    <input type="password" id="token" class="form-input" placeholder="トークンを入力" style="padding-right:36px;">
+                    <button type="button" id="toggleTokenBtn" aria-label="マスク切替" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; padding:0; margin:0; cursor:pointer; width:24px; height:24px; display:flex; align-items:center; justify-content:center; opacity:0.7;">
+                        <span id="tokenMaskIcon">
+                            <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/></svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label for="guildId" class="form-label">サーバーID</label>
+                    <input type="text" id="guildId" class="form-input" placeholder="サーバーID">
+                </div>
+                <div>
+                    <label for="commandName" class="form-label">検索するコマンド名</label>
+                    <input type="text" id="commandName" class="form-input" placeholder="部分一致">
+                </div>
+            </div>
+            
+            <label class="checkbox-container">
+                <input type="checkbox" id="includeVoiceToggle">
+                <span>ボイスチャンネルを含める</span>
+            </label>
+            <button id="fetchCommandsBtn" class="btn btn-primary w-full mt-6">
+                コマンドを取得
+            </button>
+        </div>
+
+        <div class="card card-transition card-hidden" id="command-selection-card">
+            <h2 class="text-xl font-semibold mb-4 text-white">2. コマンド選択</h2>
+            <p class="text-sm text-gray-400 mb-2">検索名に一致するコマンドが見つかりました。</p>
+            <select id="commandSelect" class="form-select">
+                <option value="">-- 実行するコマンドを選択 --</option>
+            </select>
+        </div>
+
+        <div class="card card-transition card-hidden" id="options-card">
+            <h2 class="text-xl font-semibold mb-4 text-white">3. 引数</h2>
+            <div id="options-container" class="space-y-4">
+                </div>
+        </div>
+
+        <div class="card card-transition card-hidden" id="execution-card">
+            <h2 class="text-xl font-semibold mb-4 text-white">4. 実行</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="channelList" class="form-label">実行対象チャンネルID</label>
+                    <textarea id="channelList" class="form-textarea" placeholder="カンマ区切りで入力。空欄の場合は全テキストチャンネルが対象"></textarea>
+                </div>
+                <div>
+                    <label for="clickCount" class="form-label">ボタンクリック回数</label>
+                    <input type="number" id="clickCount" class="form-input" value="1" min="1">
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label for="clickDataJson" class="form-label">再利用するメッセージとボタンのデータ (JSON)</label>
+                <textarea id="clickDataJson" class="form-textarea" placeholder='[{"channelId": "...", "messageId": "...", "customId": "..."}]'></textarea>
+            </div>
+            <button id="executeBtn" class="btn btn-primary w-full mt-6">
+                全チャンネルで実行
+            </button>
+        </div>
+
+        <div class="card card-transition card-load-animate" id="log-card">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-white">ログ</h2>
+                <div class="flex gap-2">
+                    <button id="copyLogBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3">
+                        ログコピー
+                    </button>
+                    <button id="resetBtn" class="btn bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3">
+                        ボタンリセット
+                    </button>
+                </div>
+            </div>
+            <div id="log" class="log-box"></div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
